@@ -128,3 +128,14 @@ button { font: inherit; cursor: pointer; }
   .toast { animation: rise .18s ease-out; }
   @keyframes rise { from { transform: translateY(8px); opacity: 0; } }
 }
+
+.inv-actions .danger { color: var(--danger); }
+.bar-actions { display: flex; gap: 8px; }
+.bar .bar-actions .primary { min-width: 0; padding: 0 16px; }
+.bar .bar-actions .secondary { padding: 0 16px; }
+.editing {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; margin-bottom: 12px; border-radius: var(--radius);
+  background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent);
+}
+.editing .link { padding: 0; }

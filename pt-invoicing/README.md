@@ -5,7 +5,7 @@ A mobile-friendly invoicing web app (PWA) for PT and coaching sessions, running 
 - Pick a customer from a dropdown or add a new one inline
 - Add as many sessions as you like to one invoice
 - Sends a branded HTML email plus a PDF to the customer, with you Bcc'd
-- Tracks invoices, lets you resend them, and lets you mark them paid
+- Tracks invoices, lets you edit unpaid ones, resend them, mark them paid, and delete unpaid ones
 - Installs to your iPhone home screen from Safari, with no App Store involved
 
 ```
@@ -53,7 +53,12 @@ Edit `config.json`. Deployment refuses to run while it still contains `example.c
 | `brand.logo_url` | Optional public https URL of your logo for the email header |
 | `domain.name` / `certificate_arn` | Optional custom domain (step 9). Leave blank at first |
 
-Optional logo for the PDF: save a PNG as `lambdas/mailer/assets/logo.png`.
+### Styling the PDF
+
+The PDF uses your `brand.primary` and `brand.accent` colours. Add a logo and (optionally) a font in `lambdas/mailer/assets/` (see the README.txt there), then `cdk deploy`.
+
+- `"pdf_style": "band"` (default, under `brand`): a coloured header band with your logo on it. Use a light or transparent-background logo.
+- `"pdf_style": "plain"`: a white page with the logo at the top left. Use this for a dark logo.
 
 ## 3. Set up and log in to AWS
 
@@ -92,20 +97,18 @@ cdk deploy
 
 The first deploy takes 5-10 minutes because of CloudFront. When it finishes, note the outputs:
 
-- `SiteUrl`: "https://d1vtps4edwcl10.cloudfront.net"
-- `UserPoolId`: "eu-west-2_HTJZgbB7Q"
-- `ApiUrl`: "https://6swywkegt1.execute-api.eu-west-2.amazonaws.com"
-- `CloudFrontDomain`: "d1vtps4edwcl10.cloudfront.ne"
- 
+- `SiteUrl`: your app
+- `UserPoolId`: needed in the next step
+- `ApiUrl`, `CloudFrontDomain`
 
 ## 6. Create your login
 
 ```bash
 aws cognito-idp admin-create-user \
   --region eu-west-2 \
-  --user-pool-id eu-west-2_HTJZgbB7Q \
-  --username alexrobinson.paul@outlook.com \
-  --user-attributes Name=email,Value=alexrobinson.paul@outlook.com Name=email_verified,Value=true \
+  --user-pool-id YOUR_USER_POOL_ID \
+  --username you@yourdomain.co.uk \
+  --user-attributes Name=email,Value=you@yourdomain.co.uk Name=email_verified,Value=true \
   --desired-delivery-mediums EMAIL
 ```
 
@@ -181,4 +184,4 @@ The mailer also handles retries (3 attempts, then the dead-letter queue), a send
 
 ## Not built yet (planned)
 
-Payment links (Stripe or GoCardless), overdue reminders (an EventBridge Scheduler job that publishes `email.requested` with a `payment_reminder` template), and progress-report emails. The event bus and mailer are already shaped for them.
+Voiding invoices (keeping the record but greying it out), payment links (Stripe or GoCardless), overdue reminders (an EventBridge Scheduler job that publishes `email.requested` with a `payment_reminder` template), and progress-report emails. The event bus and mailer are already shaped for them.

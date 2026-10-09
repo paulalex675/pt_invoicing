@@ -12,6 +12,8 @@ const state = {
   invoices: [],
   custForm: null, // {mode:'new'|'edit', name, email, address}
   sending: false,
+  editing: null, // invoice number being edited, or null
+  stash: null,   // the in-progress new-invoice draft, parked while editing
   draft: loadDraft(),
 };
 
@@ -38,7 +40,7 @@ function loadDraft() {
   } catch { /* ignore */ }
   return { customerId: '', issueDate: today(), lines: [newLine()] };
 }
-const saveDraft = () => localStorage.setItem('pt.draft', JSON.stringify(state.draft));
+const saveDraft = () => { if (!state.editing) localStorage.setItem('pt.draft', JSON.stringify(state.draft)); };
 function toast(msg, bad = false) {
   const t = $('#toast');
   t.textContent = msg;
@@ -181,6 +183,7 @@ function renderNew() {
   const d = state.draft;
   const cust = state.customers.find((c) => c.id === d.customerId);
   return `
+    ${state.editing ? `<div class="editing"><span>Editing <strong>${esc(state.editing)}</strong></span><button class="link" data-action="cancel-edit">Cancel</button></div>` : ''}
     <section class="panel">
       <label class="field"><span>Customer</span>
         <select data-bind="customerId">
@@ -198,7 +201,12 @@ function renderNew() {
     <button class="secondary wide" data-action="add-line">Add another session</button>
     <div class="bar">
       <div><small>Total</small><strong id="total">${pounds(totalPence())}</strong></div>
-      <button class="primary" data-action="send" ${state.sending ? 'disabled' : ''}>${state.sending ? 'Sending…' : 'Send invoice'}</button>
+      ${state.editing ? `
+      <div class="bar-actions">
+        <button class="secondary" data-action="save-edit" data-send="0" ${state.sending ? 'disabled' : ''}>Save</button>
+        <button class="primary" data-action="save-edit" data-send="1" ${state.sending ? 'disabled' : ''}>${state.sending ? 'Saving…' : 'Save & send'}</button>
+      </div>` : `
+      <button class="primary" data-action="send" ${state.sending ? 'disabled' : ''}>${state.sending ? 'Sending…' : 'Send invoice'}</button>`}
     </div>`;
 }
 
@@ -209,11 +217,13 @@ function renderInvoices() {
       <div class="inv-top"><strong>${esc(inv.number)}</strong>
         <span class="chip ${inv.status === 'paid' ? 'paid' : ''}">${inv.status === 'paid' ? 'Paid' : 'Awaiting payment'}</span></div>
       <div class="inv-mid"><span>${esc(inv.customer.name)}</span><span class="amt">${pounds(inv.total)}</span></div>
-      <div class="inv-sub">Issued ${fmtDate(inv.issueDate)}, due ${fmtDate(inv.dueDate)}</div>
+      <div class="inv-sub">Issued ${fmtDate(inv.issueDate)}, due ${fmtDate(inv.dueDate)}${inv.amendedAt ? ', updated' : ''}</div>
       <div class="inv-actions">
         <button data-action="pdf" data-n="${esc(inv.number)}">View PDF</button>
+        ${inv.status === 'paid' ? '' : `<button data-action="edit" data-n="${esc(inv.number)}">Edit</button>`}
         <button data-action="resend" data-n="${esc(inv.number)}">Resend email</button>
         <button data-action="toggle-paid" data-n="${esc(inv.number)}">${inv.status === 'paid' ? 'Mark unpaid' : 'Mark paid'}</button>
+        <button class="danger" data-action="delete" data-n="${esc(inv.number)}">Delete</button>
       </div>
     </article>`).join('');
 }
@@ -285,6 +295,57 @@ async function sendInvoice() {
   }
 }
 
+function startEdit(number) {
+  const inv = state.invoices.find((i) => i.number === number);
+  if (!inv) return;
+  if (inv.status === 'paid') return toast('Mark it unpaid before editing.', true);
+  if (!state.editing) state.stash = state.draft;
+  state.editing = number;
+  state.draft = {
+    customerId: inv.customer.id,
+    issueDate: inv.issueDate,
+    lines: inv.lines.map((l) => ({ date: l.date, type: l.type, durationMins: l.durationMins ?? '', amount: (l.amount / 100).toFixed(2), notes: l.notes || '' })),
+  };
+  state.custForm = null;
+  state.tab = 'new';
+  render();
+  window.scrollTo(0, 0);
+}
+
+function leaveEdit() {
+  state.draft = state.stash || { customerId: '', issueDate: today(), lines: [newLine()] };
+  state.stash = null;
+  state.editing = null;
+  state.custForm = null;
+}
+
+async function saveEdit(send) {
+  const problem = validateDraft();
+  if (problem) return toast(problem, true);
+  const number = state.editing;
+  const cust = state.customers.find((c) => c.id === state.draft.customerId);
+  if (send && !confirm(`Save ${number} and email the updated invoice for ${pounds(totalPence())} to ${cust.name} (${cust.email})?`)) return;
+  state.sending = true; render();
+  try {
+    const d = state.draft;
+    const inv = await api('PUT', `/invoices/${number}`, {
+      customerId: d.customerId,
+      issueDate: d.issueDate,
+      send,
+      lines: d.lines.map((l) => ({ ...l, durationMins: l.durationMins === '' ? null : Number(l.durationMins), amount: Number(l.amount) })),
+    });
+    leaveEdit();
+    state.sending = false;
+    state.invoices = await api('GET', '/invoices');
+    state.tab = 'invoices'; render();
+    if (!send) toast(`${number} saved`);
+    else inv.emailQueued ? toast(`${number} updated and sent to ${cust.name}`) : toast(`${number} saved, but the email didn't send. Use Resend email.`, true);
+  } catch (e) {
+    state.sending = false; render();
+    if (e.message !== 'Signed out') toast(e.message, true);
+  }
+}
+
 async function invoiceAction(action, number) {
   const inv = state.invoices.find((i) => i.number === number);
   try {
@@ -306,6 +367,13 @@ async function invoiceAction(action, number) {
       inv.status = status;
       render();
       toast(status === 'paid' ? `${number} marked paid` : `${number} marked unpaid`);
+    } else if (action === 'delete') {
+      if (!confirm(`Delete ${number}? This can't be undone.`)) return;
+      await api('DELETE', `/invoices/${number}`);
+      state.invoices = state.invoices.filter((i) => i.number !== number);
+      if (state.editing === number) { leaveEdit(); }
+      render();
+      toast(`${number} deleted`);
     }
   } catch (e) { if (e.message !== 'Signed out') toast(e.message, true); }
 }
@@ -329,6 +397,9 @@ document.addEventListener('click', (e) => {
   else if (a === 'cancel-customer') { state.custForm = null; render(); }
   else if (a === 'save-customer') saveCustomer();
   else if (a === 'send') sendInvoice();
+  else if (a === 'edit') startEdit(el.dataset.n);
+  else if (a === 'cancel-edit') { leaveEdit(); render(); }
+  else if (a === 'save-edit') saveEdit(el.dataset.send === '1');
   else invoiceAction(a, el.dataset.n);
 });
 
