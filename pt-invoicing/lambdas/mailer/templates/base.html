@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>{% block title %}{{ biz.name }}{% endblock %}</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 12px;">
+<tr><td align="center">
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:6px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#1f2937;">
+    <tr><td style="background:{{ brand.primary }};padding:22px 28px;">
+      {% if brand.logo_url %}
+      <img src="{{ brand.logo_url }}" alt="{{ biz.name }}" height="36" style="display:block;height:36px;border:0;">
+      {% else %}
+      <div style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:0.2px;">{{ biz.name }}</div>
+      {% endif %}
+    </td></tr>
+    <tr><td style="height:4px;background:{{ brand.accent }};font-size:0;line-height:0;">&nbsp;</td></tr>
+    <tr><td style="padding:28px;font-size:15px;line-height:1.55;">
+      {% block content %}{% endblock %}
+    </td></tr>
+    <tr><td style="padding:18px 28px 26px;border-top:1px solid #e5e7eb;font-size:12px;line-height:1.5;color:#6b7280;">
+      {% if biz.footer_note %}{{ biz.footer_note }}<br>{% endif %}
+      {{ biz.name }}{% if biz.address_lines %} · {{ biz.address_lines | join(', ') }}{% endif %}<br>
+      {% if biz.vat_note %}{{ biz.vat_note }}{% endif %}
+    </td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>

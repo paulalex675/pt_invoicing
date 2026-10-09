@@ -1,0 +1,22 @@
+{{ biz.name }}
+Invoice {{ inv.number }}
+Issued {{ inv.issueDate | nice_date }} - due {{ inv.dueDate | nice_date }}
+
+Hi {{ inv.customer.name.split(' ')[0] }}, thanks for training with me. Your invoice is below and attached as a PDF.
+
+{% for l in inv.lines -%}
+{{ l.date | nice_date }}  {{ l.type }}{% if l.durationMins %} ({{ l.durationMins }} min){% endif %}  {{ l.amount | money }}
+{% if l.notes %}    {{ l.notes }}
+{% endif %}{% endfor %}
+Total due: {{ inv.total | money }}
+
+Pay by bank transfer
+Account name:   {{ biz.bank.account_name }}
+Sort code:      {{ biz.bank.sort_code }}
+Account number: {{ biz.bank.account_number }}
+Reference:      {{ inv.number }}
+
+Please pay by {{ inv.dueDate | nice_date }}. Any questions, just reply to this email.
+
+{{ biz.footer_note }}
+{{ biz.name }}{% if biz.vat_note %} - {{ biz.vat_note }}{% endif %}
