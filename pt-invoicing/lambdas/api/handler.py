@@ -262,69 +262,11 @@ def invoice_pdf(_body, params):
     return {"pdf": base64.b64encode(obj["Body"].read()).decode("ascii")}
 
 
-def update_invoice(body, params):
-    """Edit an unpaid invoice in place. The number stays the same."""
-    number = params["number"]
-    existing = _get_invoice(number)
-    if existing.get("status") == "paid":
-        raise ApiError(409, "Mark the invoice as unpaid before editing it")
-    cid = clean(body.get("customerId"), "Customer", 40)
-    cust = TABLE.get_item(Key={"pk": "CUSTOMER", "sk": cid}).get("Item")
-    if not cust:
-        raise ApiError(404, "Customer not found")
-    issue = valid_date(body.get("issueDate") or existing["issueDate"], "Issue date")
-    lines = _parse_lines(body.get("lines"))
-    due = (dt.date.fromisoformat(issue) + dt.timedelta(days=int(BIZ.get("payment_terms_days", 7)))).isoformat()
-    customer = {"id": cid, "name": cust["name"], "email": cust["email"], "address": cust.get("address", "")}
-    try:
-        TABLE.update_item(
-            Key={"pk": "INVOICE", "sk": number},
-            UpdateExpression="SET issueDate = :i, dueDate = :d, #c = :c, #l = :l, #t = :t, amendedAt = :a",
-            ConditionExpression="attribute_exists(sk) AND #s <> :paid",
-            ExpressionAttributeNames={"#c": "customer", "#l": "lines", "#t": "total", "#s": "status"},
-            ExpressionAttributeValues={
-                ":i": issue, ":d": due, ":c": customer, ":l": lines,
-                ":t": sum(l["amount"] for l in lines),
-                ":a": dt.datetime.now(dt.timezone.utc).isoformat(), ":paid": "paid",
-            },
-        )
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-            raise ApiError(409, "This invoice can't be edited (it may have just been marked paid)")
-        raise
-    # The old PDF is now wrong: remove it so nobody opens a stale copy, then regenerate
-    try:
-        S3.delete_object(Bucket=FILES_BUCKET, Key=f"invoices/{number}.pdf")
-    except ClientError:
-        logger.warning("Couldn't delete old PDF for %s", number)
-    inv = _public(_get_invoice(number))
-    if body.get("send"):
-        inv["emailQueued"] = publish_email(inv)
-    else:
-        inv["pdfQueued"] = publish_email(inv, deliver=False)
-    return inv
-
-
-def delete_invoice(_body, params):
-    number = params["number"]
-    inv = _get_invoice(number)
-    if inv.get("status") == "paid":
-        raise ApiError(409, "Mark the invoice as unpaid before deleting it")
-    TABLE.delete_item(Key={"pk": "INVOICE", "sk": number})
-    try:
-        S3.delete_object(Bucket=FILES_BUCKET, Key=f"invoices/{number}.pdf")
-    except ClientError:
-        logger.warning("Couldn't delete PDF for %s", number)
-    return {"deleted": number}
-
-
 # ---------- events ----------
 
-def publish_email(invoice, deliver=True):
-    """Ask the mailer to send this invoice (or, with deliver=False, just rebuild its PDF).
-    Returns True if the event was accepted."""
+def publish_email(invoice):
+    """Ask the mailer to send this invoice. Returns True if the event was accepted."""
     detail = {
-        "deliver": deliver,
         "template": "invoice",
         "ref": invoice["number"],
         "to": [invoice["customer"]["email"]],
@@ -355,8 +297,6 @@ ROUTES = {
     "POST /invoices/{number}/resend": resend_invoice,
     "POST /invoices/{number}/status": set_status,
     "GET /invoices/{number}/pdf": invoice_pdf,
-    "PUT /invoices/{number}": update_invoice,
-    "DELETE /invoices/{number}": delete_invoice,
 }
 
 

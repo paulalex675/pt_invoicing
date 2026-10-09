@@ -64,37 +64,7 @@ def run():
     open("/tmp/sample.pdf", "wb").write(pdf_bytes); open("/tmp/sample.html", "w").write(html)
     print("subject:", m["Subject"])
     # PDF now available via API
-    st, pdfres = call("GET /invoices/{number}/pdf", None, {"number": "INV-0001"})
-    import base64; assert st == 200 and base64.b64decode(pdfres["pdf"])[:4] == b"%PDF"
-
-    # ---- edit: paid invoices are locked, unpaid ones can change
-    new_lines = [dict(lines[0], amount=50)]
-    assert call("PUT /invoices/{number}", {"customerId": c["id"], "lines": new_lines}, {"number": "INV-0001"})[0] == 409  # paid
-    assert call("PUT /invoices/{number}", {"customerId": c["id"], "lines": new_lines}, {"number": "INV-0099"})[0] == 404
-    s, ed = call("PUT /invoices/{number}", {"customerId": c["id"], "issueDate": "2026-10-10", "lines": new_lines, "send": False}, {"number": "INV-0002"})
-    assert s == 200 and ed["total"] == 5000 and ed["dueDate"] == "2026-10-17" and ed["amendedAt"] and ed["pdfQueued"] is True and "emailQueued" not in ed, ed
-    assert call("GET /invoices/{number}/pdf", None, {"number": "INV-0002"})[0] == 404  # stale PDF removed until rebuilt
-    sent.clear()
-    detail2 = {"template": "invoice", "ref": "INV-0002", "deliver": False, "to": [ed["customer"]["email"]], "data": {"invoice": ed}}
-    assert mailer.handler({"Records": [{"messageId": "9", "body": json.dumps(detail2)}]}, None)["batchItemFailures"] == []
-    assert not sent, "deliver=false must not email"
-    assert call("GET /invoices/{number}/pdf", None, {"number": "INV-0002"})[0] == 200  # rebuilt
-    # edit + send produces an 'Updated invoice' email
-    s, ed2 = call("PUT /invoices/{number}", {"customerId": c["id"], "lines": new_lines, "send": True}, {"number": "INV-0002"})
-    assert ed2["emailQueued"] is True
-    detail3 = {"template": "invoice", "ref": "INV-0002", "to": ["other@example.com"], "data": {"invoice": ed2}}
-    mailer.handler({"Records": [{"messageId": "10", "body": json.dumps(detail3)}]}, None)
-    m2 = message_from_bytes(sent["Content"]["Raw"]["Data"])
-    assert m2["Subject"].startswith("Updated invoice INV-0002"), m2["Subject"]
-    assert "replaces the earlier INV-0002" in {p.get_content_type(): p for p in m2.walk()}["text/html"].get_payload(decode=True).decode()
-
-    # ---- delete: paid invoices are locked
-    assert call("DELETE /invoices/{number}", None, {"number": "INV-0001"})[0] == 409
-    assert call("DELETE /invoices/{number}", None, {"number": "INV-0002"})[0] == 200
-    assert call("DELETE /invoices/{number}", None, {"number": "INV-0002"})[0] == 404
-    assert [i["number"] for i in call("GET /invoices")[1]] == ["INV-0001"]
-    # suppression test below needs a fresh sent-log entry
-    sent.clear()
+    assert call("GET /invoices/{number}/pdf", None, {"number": "INV-0001"})[0] == 200
 
     # Feedback: hard bounce suppresses the address, later sends skip it
     msg_id = ddb.scan(TableName="t", FilterExpression="pk = :p", ExpressionAttributeValues={":p": {"S": "EMAIL"}})["Items"][0]["sk"]["S"]

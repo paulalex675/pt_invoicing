@@ -197,7 +197,6 @@ class InvoicingStack(Stack):
         table.grant_read_write_data(api_fn)
         bus.grant_put_events_to(api_fn)
         files_bucket.grant_read(api_fn)
-        files_bucket.grant_delete(api_fn)
 
         # ------------------------------------------------------------------ API
         http_api = apigw.HttpApi(
@@ -206,7 +205,7 @@ class InvoicingStack(Stack):
             create_default_stage=False,
             cors_preflight=apigw.CorsPreflightOptions(
                 allow_origins=[site_url],
-                allow_methods=[apigw.CorsHttpMethod.GET, apigw.CorsHttpMethod.POST, apigw.CorsHttpMethod.PUT, apigw.CorsHttpMethod.DELETE],
+                allow_methods=[apigw.CorsHttpMethod.GET, apigw.CorsHttpMethod.POST, apigw.CorsHttpMethod.PUT],
                 allow_headers=["authorization", "content-type"],
                 max_age=Duration.hours(1),
             ),
@@ -229,7 +228,6 @@ class InvoicingStack(Stack):
             "/customers": [M.GET, M.POST],
             "/customers/{id}": [M.PUT],
             "/invoices": [M.GET, M.POST],
-            "/invoices/{number}": [M.PUT, M.DELETE],
             "/invoices/{number}/resend": [M.POST],
             "/invoices/{number}/status": [M.POST],
             "/invoices/{number}/pdf": [M.GET],

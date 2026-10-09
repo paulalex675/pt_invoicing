@@ -1,8 +1,8 @@
 {{ biz.name }}
-{% if inv.amendedAt %}Updated invoice{% else %}Invoice{% endif %} {{ inv.number }}
+Invoice {{ inv.number }}
 Issued {{ inv.issueDate | nice_date }} - due {{ inv.dueDate | nice_date }}
 
-Hi {{ inv.customer.name.split(' ')[0] }}, {% if inv.amendedAt %}I've updated this invoice. It replaces the earlier {{ inv.number }}, so please use these details. The new PDF is attached.{% else %}thanks for training with me. Your invoice is below and attached as a PDF.{% endif %}
+Hi {{ inv.customer.name.split(' ')[0] }}, thanks for training with me. Your invoice is below and attached as a PDF.
 
 {% for l in inv.lines -%}
 {{ l.date | nice_date }}  {{ l.type }}{% if l.durationMins %} ({{ l.durationMins }} min){% endif %}  {{ l.amount | money }}

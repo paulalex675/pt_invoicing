@@ -182,13 +182,3 @@ The mailer also handles retries (3 attempts, then the dead-letter queue), a send
 ## Not built yet (planned)
 
 Payment links (Stripe or GoCardless), overdue reminders (an EventBridge Scheduler job that publishes `email.requested` with a `payment_reminder` template), and progress-report emails. The event bus and mailer are already shaped for them.
-
-
-
-aws sesv2 put-account-details --region eu-west-2 \
-  --production-access-enabled \
-  --mail-type TRANSACTIONAL \
-  --website-url "https://www.paulpt.co.uk/" \
-  --contact-language EN \
-  --additional-contact-email-addresses alexrobinson.paul@outlook.com \
-  --use-case-description "Sole-trader personal training business. I email invoices (HTML + PDF) one at a time to my own clients after training sessions, with a copy to myself. Expected volume is under 100 emails a month, all to existing clients who have booked sessions with me. Recipients are only people I have trained, and addresses are entered by me manually. Hard bounces and complaints are handled automatically: the address is suppressed and no further mail is sent. Sending domain is verified with DKIM."
