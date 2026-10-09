@@ -32,7 +32,7 @@ def render_invoice(data, config):
     ctx = {"inv": inv, "biz": biz, "brand": brand}
     pdf_bytes = pdf.build_invoice_pdf(inv, biz, brand)
     return {
-        "subject": f"Invoice {inv['number']} from {biz['name']} - {money(inv['total'])}",
+        "subject": f"{'Updated invoice' if inv.get('amendedAt') else 'Invoice'} {inv['number']} from {biz['name']} - {money(inv['total'])}",
         "html": _env.get_template("invoice.html").render(**ctx),
         "text": _env.get_template("invoice.txt").render(**ctx),
         "attachments": [{

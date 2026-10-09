@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Invoice {{ inv.number }}{% endblock %}
 {% block content %}
-<p style="margin:0 0 4px;font-size:22px;font-weight:700;color:{{ brand.primary }};">Invoice {{ inv.number }}</p>
+<p style="margin:0 0 4px;font-size:22px;font-weight:700;color:{{ brand.primary }};">{% if inv.amendedAt %}Updated invoice{% else %}Invoice{% endif %} {{ inv.number }}</p>
 <p style="margin:0 0 20px;color:#6b7280;">Issued {{ inv.issueDate | nice_date }} · Due {{ inv.dueDate | nice_date }}</p>
 
-<p style="margin:0 0 20px;">Hi {{ inv.customer.name.split(' ')[0] }}, thanks for training with me. Here's your invoice - the PDF is attached.</p>
+<p style="margin:0 0 20px;">Hi {{ inv.customer.name.split(' ')[0] }}, {% if inv.amendedAt %}I've updated this invoice. It replaces the earlier {{ inv.number }}, so please use these details. The new PDF is attached.{% else %}thanks for training with me. Here's your invoice - the PDF is attached.{% endif %}</p>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px;">
   <tr>

@@ -8,6 +8,7 @@ Event detail shape:
     "ref": "INV-0001",              # your own reference, stored in the send log
     "to": ["client@example.com"],
     "bcc": ["you@example.com"],     # optional
+    "deliver": true,                # false = render and store attachments only, don't email
     "data": { ... }                 # whatever the renderer needs
   }
 
@@ -68,6 +69,11 @@ def send(msg):
         logger.error("Unknown template %r - dropping", msg.get("template"))
         return
 
+    if msg.get("deliver") is False:
+        store_attachments(renderer(msg["data"], CONFIG))
+        logger.info("Rebuilt attachments for %s %s (not emailed)", msg["template"], msg.get("ref"))
+        return
+
     to = [a.lower() for a in msg.get("to", []) if a]
     bcc = [a.lower() for a in msg.get("bcc", []) if a]
     suppressed = [a for a in to if is_suppressed(a)]
@@ -80,9 +86,7 @@ def send(msg):
 
     out = renderer(msg["data"], CONFIG)
 
-    for att in out.get("attachments", []):
-        if att.get("s3_key"):
-            S3.put_object(Bucket=FILES_BUCKET, Key=att["s3_key"], Body=att["data"], ContentType=att["content_type"])
+    store_attachments(out)
 
     mime = EmailMessage()
     mime["Subject"] = out["subject"]
@@ -105,6 +109,12 @@ def send(msg):
     message_id = SES.send_email(**params)["MessageId"]
     log_send(message_id, msg, "sent")
     logger.info("Sent %s %s as %s", msg["template"], msg.get("ref"), message_id)
+
+
+def store_attachments(out):
+    for att in out.get("attachments", []):
+        if att.get("s3_key"):
+            S3.put_object(Bucket=FILES_BUCKET, Key=att["s3_key"], Body=att["data"], ContentType=att["content_type"])
 
 
 def log_send(message_id, msg, status):
