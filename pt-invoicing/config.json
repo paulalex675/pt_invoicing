@@ -1,20 +1,20 @@
 {
   "region": "eu-west-2",
   "business": {
-    "name": "Your Business Name",
-    "owner_email": "you@example.co.uk",
-    "from_address": "invoices@example.co.uk",
-    "reply_to": "you@example.co.uk",
-    "address_lines": ["1 Example Street", "Town", "AB1 2CD"],
-    "phone": "",
-    "website": "https://example.co.uk",
+    "name": "Paul Robinson",
+    "owner_email": "alexrobinson.paul@outlook.com",
+    "from_address": "alexrobinson.paul@outlook.com",
+    "reply_to": "alexrobinson.paul@outlook.com",
+    "address_lines": ["10 Crowborough Path", "Watford", "WD19 6EH"],
+    "phone": "07568962707",
+    "website": "http://www.paulpt.co.uk",
     "invoice_prefix": "INV-",
     "payment_terms_days": 7,
     "vat_note": "Not VAT registered",
     "bank": {
-      "account_name": "Your Name",
-      "sort_code": "00-00-00",
-      "account_number": "00000000"
+      "account_name": "Paul Robinson",
+      "sort_code": "77-95-26",
+      "account_number": "80420168"
     },
     "footer_note": "Thank you for training with me."
   },

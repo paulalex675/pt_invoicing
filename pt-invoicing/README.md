@@ -92,18 +92,20 @@ cdk deploy
 
 The first deploy takes 5-10 minutes because of CloudFront. When it finishes, note the outputs:
 
-- `SiteUrl`: your app
-- `UserPoolId`: needed in the next step
-- `ApiUrl`, `CloudFrontDomain`
+- `SiteUrl`: "https://d1vtps4edwcl10.cloudfront.net"
+- `UserPoolId`: "eu-west-2_HTJZgbB7Q"
+- `ApiUrl`: "https://6swywkegt1.execute-api.eu-west-2.amazonaws.com"
+- `CloudFrontDomain`: "d1vtps4edwcl10.cloudfront.ne"
+ 
 
 ## 6. Create your login
 
 ```bash
 aws cognito-idp admin-create-user \
   --region eu-west-2 \
-  --user-pool-id YOUR_USER_POOL_ID \
-  --username you@yourdomain.co.uk \
-  --user-attributes Name=email,Value=you@yourdomain.co.uk Name=email_verified,Value=true \
+  --user-pool-id eu-west-2_HTJZgbB7Q \
+  --username alexrobinson.paul@outlook.com \
+  --user-attributes Name=email,Value=alexrobinson.paul@outlook.com Name=email_verified,Value=true \
   --desired-delivery-mediums EMAIL
 ```
 

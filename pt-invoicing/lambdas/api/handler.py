@@ -29,7 +29,17 @@ BUS = os.environ["BUS"]
 FILES_BUCKET = os.environ["FILES_BUCKET"]
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-LINE_TYPES = {"PT session", "Coaching session", "Small group", "Online coaching", "Other"}
+LINE_TYPES = {'PT session'
+              ,'Kids MMA'
+              ,'Kids Muay Thai'
+              ,'Kids Kickboxing'
+              ,'Adults MMA'
+              ,'Adults Muay Thai'
+              ,'Adults Kickboxing'
+              ,'Small group'
+              ,'Online coaching'
+              ,'Other'
+            }
 MAX_LINES = 50
 
 
@@ -245,17 +255,11 @@ def set_status(body, params):
 def invoice_pdf(_body, params):
     number = params["number"]
     _get_invoice(number)
-    key = f"invoices/{number}.pdf"
     try:
-        S3.head_object(Bucket=FILES_BUCKET, Key=key)
+        obj = S3.get_object(Bucket=FILES_BUCKET, Key=f"invoices/{number}.pdf")
     except ClientError:
         raise ApiError(404, "The PDF isn't ready yet - try again in a moment")
-    url = S3.generate_presigned_url(
-        "get_object",
-        Params={"Bucket": FILES_BUCKET, "Key": key, "ResponseContentType": "application/pdf"},
-        ExpiresIn=300,
-    )
-    return {"url": url}
+    return {"pdf": base64.b64encode(obj["Body"].read()).decode("ascii")}
 
 
 # ---------- events ----------

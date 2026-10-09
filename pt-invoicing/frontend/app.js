@@ -1,7 +1,7 @@
 /* PT Invoices - single-file front end. No build step, no dependencies. */
 'use strict';
 
-const TYPES = ['PT session', 'Coaching session', 'Small group', 'Online coaching', 'Other'];
+const TYPES = ['PT session', 'Kids MMA', 'Kids Muay Thai', 'Kids Kickboxing', 'Adults MMA', 'Adults Muay Thai', 'Adults Kickboxing', 'Small group', 'Online coaching', 'Other'];
 const $ = (s) => document.querySelector(s);
 const appEl = $('#app');
 
@@ -291,7 +291,9 @@ async function invoiceAction(action, number) {
     if (action === 'pdf') {
       const w = window.open('', '_blank'); // opened synchronously so iOS doesn't block it
       try {
-        const { url } = await api('GET', `/invoices/${number}/pdf`);
+        const { pdf } = await api('GET', `/invoices/${number}/pdf`);
+        const bytes = Uint8Array.from(atob(pdf), (c) => c.charCodeAt(0));
+        const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
         w ? (w.location.href = url) : location.assign(url);
       } catch (e) { if (w) w.close(); throw e; }
     } else if (action === 'resend') {
