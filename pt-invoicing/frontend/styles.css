@@ -74,7 +74,7 @@ textarea { min-height: 76px; resize: vertical; }
 input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px;
 }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .grid2 .field { margin-bottom: 10px; }
 
 button { font: inherit; cursor: pointer; }
@@ -139,3 +139,17 @@ button { font: inherit; cursor: pointer; }
   background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent);
 }
 .editing .link { padding: 0; }
+
+/* iOS Safari form fixes */
+.field { min-width: 0; }
+input, select, textarea {
+  min-width: 0; max-width: 100%;
+  -webkit-appearance: none; appearance: none;
+}
+input[type="date"] { display: block; height: 46px; line-height: 1.2; text-align: left; }
+input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; min-height: 1.2em; }
+select {
+  height: 46px; padding-right: 36px; text-overflow: ellipsis;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5l5 5 5-5' fill='none' stroke='%23888' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 12px;
+}
