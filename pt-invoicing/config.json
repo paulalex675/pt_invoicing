@@ -9,7 +9,7 @@
     "phone": "07568962707",
     "website": "http://www.paulpt.co.uk",
     "invoice_prefix": "INV-",
-    "payment_terms_days": 7,
+    "payment_terms_days": 28,
     "vat_note": "Not VAT registered",
     "bank": {
       "account_name": "Paul Robinson",

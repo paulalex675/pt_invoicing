@@ -191,7 +191,7 @@ def build_invoice_pdf(inv, biz, brand):
     else:
         story.append(pay)
 
-    foot = [biz.get("vat_note"), f"Payment due within {biz.get('payment_terms_days', 7)} days of issue.", biz.get("footer_note")]
+    foot = [biz.get("vat_note"), f"Payment due by {_date(inv['dueDate'])}.", biz.get("footer_note")]
     story += [Spacer(1, 10 * mm), Paragraph("<br/>".join(_esc(f) for f in foot if f), small)]
 
     if band:

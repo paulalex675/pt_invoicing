@@ -29,17 +29,7 @@ BUS = os.environ["BUS"]
 FILES_BUCKET = os.environ["FILES_BUCKET"]
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-LINE_TYPES = {'PT session'
-              ,'Kids MMA'
-              ,'Kids Muay Thai'
-              ,'Kids Kickboxing'
-              ,'Adults MMA'
-              ,'Adults Muay Thai'
-              ,'Adults Kickboxing'
-              ,'Small group'
-              ,'Online coaching'
-              ,'Other'
-            }
+LINE_TYPES = {"PT session", "Coaching session", "Small group", "Online coaching", "Other"}
 MAX_LINES = 50
 
 
@@ -188,6 +178,16 @@ def _parse_lines(raw):
     return sorted(lines, key=lambda l: l["date"])
 
 
+def _due_date(issue, requested):
+    """Explicit due date if given (must not precede the invoice date), else issue date + payment terms."""
+    if requested in (None, ""):
+        return (dt.date.fromisoformat(issue) + dt.timedelta(days=int(BIZ.get("payment_terms_days", 7)))).isoformat()
+    due = valid_date(requested, "Due date")
+    if due < issue:
+        raise ApiError(400, "The due date can't be before the invoice date")
+    return due
+
+
 def create_invoice(body, _params):
     cid = clean(body.get("customerId"), "Customer", 40)
     cust = TABLE.get_item(Key={"pk": "CUSTOMER", "sk": cid}).get("Item")
@@ -195,7 +195,7 @@ def create_invoice(body, _params):
         raise ApiError(404, "Customer not found")
     issue = valid_date(body.get("issueDate") or today_uk(), "Issue date")
     lines = _parse_lines(body.get("lines"))
-    due = (dt.date.fromisoformat(issue) + dt.timedelta(days=int(BIZ.get("payment_terms_days", 7)))).isoformat()
+    due = _due_date(issue, body.get("dueDate"))
     invoice = {
         "pk": "INVOICE",
         "sk": next_invoice_number(),
@@ -233,8 +233,20 @@ def _get_invoice(number):
 
 
 def resend_invoice(_body, params):
-    inv = _public(_get_invoice(params["number"]))
-    return {"emailQueued": publish_email(inv)}
+    item = _get_invoice(params["number"])
+    # Pick up any corrections made to the customer's details since the invoice was created
+    cust = TABLE.get_item(Key={"pk": "CUSTOMER", "sk": item["customer"]["id"]}).get("Item")
+    if cust:
+        fresh = {"id": item["customer"]["id"], "name": cust["name"], "email": cust["email"], "address": cust.get("address", "")}
+        if fresh != item["customer"]:
+            TABLE.update_item(
+                Key={"pk": "INVOICE", "sk": params["number"]},
+                UpdateExpression="SET #c = :c",
+                ExpressionAttributeNames={"#c": "customer"},
+                ExpressionAttributeValues={":c": fresh},
+            )
+            item["customer"] = fresh
+    return {"emailQueued": publish_email(_public(item))}
 
 
 def set_status(body, params):
@@ -274,7 +286,7 @@ def update_invoice(body, params):
         raise ApiError(404, "Customer not found")
     issue = valid_date(body.get("issueDate") or existing["issueDate"], "Issue date")
     lines = _parse_lines(body.get("lines"))
-    due = (dt.date.fromisoformat(issue) + dt.timedelta(days=int(BIZ.get("payment_terms_days", 7)))).isoformat()
+    due = _due_date(issue, body.get("dueDate"))
     customer = {"id": cid, "name": cust["name"], "email": cust["email"], "address": cust.get("address", "")}
     try:
         TABLE.update_item(

@@ -250,6 +250,7 @@ class InvoicingStack(Stack):
                     "redirectUri": f"{site_url}/",
                     "brand": brand,
                     "businessName": biz["name"],
+                    "paymentTermsDays": int(biz.get("payment_terms_days", 7)),
                 }),
             ],
             destination_bucket=site_bucket,

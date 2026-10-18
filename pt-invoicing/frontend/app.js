@@ -1,7 +1,7 @@
 /* PT Invoices - single-file front end. No build step, no dependencies. */
 'use strict';
 
-const TYPES = ['PT session', 'Kids MMA', 'Kids Muay Thai', 'Kids Kickboxing', 'Adults MMA', 'Adults Muay Thai', 'Adults Kickboxing', 'Small group', 'Online coaching', 'Other'];
+const TYPES = ['PT session', 'Coaching session', 'Small group', 'Online coaching', 'Other'];
 const $ = (s) => document.querySelector(s);
 const appEl = $('#app');
 
@@ -25,6 +25,12 @@ function today() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
+function addDays(iso, n) {
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+const defaultDue = (issue) => (issue ? addDays(issue, cfg?.paymentTermsDays ?? 7) : '');
 const store = {
   get: (k) => localStorage.getItem('pt.' + k),
   set: (k, v) => localStorage.setItem('pt.' + k, v),
@@ -38,7 +44,7 @@ function loadDraft() {
     const d = JSON.parse(localStorage.getItem('pt.draft'));
     if (d && Array.isArray(d.lines) && d.lines.length) return d;
   } catch { /* ignore */ }
-  return { customerId: '', issueDate: today(), lines: [newLine()] };
+  return { customerId: '', issueDate: today(), dueDate: '', lines: [newLine()] };
 }
 const saveDraft = () => { if (!state.editing) localStorage.setItem('pt.draft', JSON.stringify(state.draft)); };
 function toast(msg, bad = false) {
@@ -194,7 +200,10 @@ function renderNew() {
       </label>
       ${cust && !state.custForm ? `<button class="link" data-action="edit-customer">Edit ${esc(cust.name)}'s details</button>` : ''}
       ${state.custForm ? customerForm() : ''}
-      <label class="field"><span>Invoice date</span><input type="date" data-bind="issueDate" value="${esc(d.issueDate)}"></label>
+      <div class="grid2">
+        <label class="field"><span>Invoice date</span><input type="date" data-bind="issueDate" value="${esc(d.issueDate)}"></label>
+        <label class="field"><span>Payment due</span><input type="date" data-bind="dueDate" value="${esc(d.dueDate || defaultDue(d.issueDate))}"></label>
+      </div>
     </section>
     <h2>Sessions</h2>
     ${d.lines.map(lineCard).join('')}
@@ -261,6 +270,7 @@ async function saveCustomer() {
 function validateDraft() {
   const d = state.draft;
   if (!d.customerId) return 'Choose a customer first.';
+  if (d.dueDate && d.dueDate < d.issueDate) return "The due date can't be before the invoice date.";
   for (const [i, l] of d.lines.entries()) {
     if (!l.date) return `Session ${i + 1} needs a date.`;
     if (!(parseFloat(l.amount) > 0)) return `Session ${i + 1} needs a price.`;
@@ -280,10 +290,11 @@ async function sendInvoice() {
     const inv = await api('POST', '/invoices', {
       customerId: d.customerId,
       issueDate: d.issueDate,
+      dueDate: d.dueDate || null,
       lines: d.lines.map((l) => ({ ...l, durationMins: l.durationMins === '' ? null : Number(l.durationMins), amount: Number(l.amount) })),
     });
     const last = d.lines[d.lines.length - 1];
-    state.draft = { customerId: '', issueDate: today(), lines: [newLine({ type: last.type, durationMins: last.durationMins, amount: last.amount })] };
+    state.draft = { customerId: '', issueDate: today(), dueDate: '', lines: [newLine({ type: last.type, durationMins: last.durationMins, amount: last.amount })] };
     saveDraft();
     state.invoices = await api('GET', '/invoices');
     state.tab = 'invoices';
@@ -304,6 +315,7 @@ function startEdit(number) {
   state.draft = {
     customerId: inv.customer.id,
     issueDate: inv.issueDate,
+    dueDate: inv.dueDate === defaultDue(inv.issueDate) ? '' : inv.dueDate,
     lines: inv.lines.map((l) => ({ date: l.date, type: l.type, durationMins: l.durationMins ?? '', amount: (l.amount / 100).toFixed(2), notes: l.notes || '' })),
   };
   state.custForm = null;
@@ -313,7 +325,7 @@ function startEdit(number) {
 }
 
 function leaveEdit() {
-  state.draft = state.stash || { customerId: '', issueDate: today(), lines: [newLine()] };
+  state.draft = state.stash || { customerId: '', issueDate: today(), dueDate: '', lines: [newLine()] };
   state.stash = null;
   state.editing = null;
   state.custForm = null;
@@ -331,6 +343,7 @@ async function saveEdit(send) {
     const inv = await api('PUT', `/invoices/${number}`, {
       customerId: d.customerId,
       issueDate: d.issueDate,
+      dueDate: d.dueDate || null,
       send,
       lines: d.lines.map((l) => ({ ...l, durationMins: l.durationMins === '' ? null : Number(l.durationMins), amount: Number(l.amount) })),
     });
@@ -411,7 +424,11 @@ document.addEventListener('input', (e) => {
     saveDraft();
     const total = $('#total');
     if (total) total.textContent = pounds(totalPence());
-  } else if (t.dataset.bind === 'issueDate') { state.draft.issueDate = t.value; saveDraft(); }
+  } else if (t.dataset.bind === 'issueDate') {
+    state.draft.issueDate = t.value; saveDraft();
+    const due = document.querySelector('[data-bind="dueDate"]');
+    if (due && !state.draft.dueDate) due.value = defaultDue(t.value); // follows the invoice date until you set it yourself
+  } else if (t.dataset.bind === 'dueDate') { state.draft.dueDate = t.value; saveDraft(); }
 });
 
 document.addEventListener('change', (e) => {

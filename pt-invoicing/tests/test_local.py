@@ -88,6 +88,24 @@ def run():
     assert m2["Subject"].startswith("Updated invoice INV-0002"), m2["Subject"]
     assert "replaces the earlier INV-0002" in {p.get_content_type(): p for p in m2.walk()}["text/html"].get_payload(decode=True).decode()
 
+    # ---- due date: default from terms, custom allowed, can't precede the invoice date
+    s, dd = call("POST /invoices", {"customerId": c["id"], "issueDate": "2026-10-09", "dueDate": "2026-11-01", "lines": lines})
+    assert s == 200 and dd["dueDate"] == "2026-11-01", dd
+    assert call("POST /invoices", {"customerId": c["id"], "issueDate": "2026-10-09", "dueDate": "2026-10-01", "lines": lines})[0] == 400
+    s, dd2 = call("PUT /invoices/{number}", {"customerId": c["id"], "issueDate": "2026-10-09", "dueDate": "2026-12-24", "lines": lines}, {"number": dd["number"]})
+    assert s == 200 and dd2["dueDate"] == "2026-12-24"
+    s, dd3 = call("PUT /invoices/{number}", {"customerId": c["id"], "issueDate": "2026-10-09", "dueDate": None, "lines": lines}, {"number": dd["number"]})
+    assert dd3["dueDate"] == "2026-10-16"  # blank -> back to the default terms
+    # ---- resend picks up a corrected customer email
+    call("PUT /customers/{id}", {"name": "Jo B", "email": "jo.fixed@example.com"}, {"id": c["id"]})
+    captured = {}
+    api.publish_email = lambda inv, deliver=True: captured.update(inv) or True
+    assert call("POST /invoices/{number}/resend", None, {"number": dd["number"]})[1]["emailQueued"] is True
+    assert captured["customer"]["email"] == "jo.fixed@example.com"
+    assert call("GET /invoices")[1][0]["customer"]["email"] == "jo.fixed@example.com"
+    call("PUT /customers/{id}", {"name": "Jo B", "email": "jo@example.com"}, {"id": c["id"]})  # restore for the tests below
+    assert call("DELETE /invoices/{number}", None, {"number": dd["number"]})[0] == 200
+
     # ---- delete: paid invoices are locked
     assert call("DELETE /invoices/{number}", None, {"number": "INV-0001"})[0] == 409
     assert call("DELETE /invoices/{number}", None, {"number": "INV-0002"})[0] == 200
