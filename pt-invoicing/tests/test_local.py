@@ -122,5 +122,11 @@ def run():
     assert not sent, "suppressed address should not be emailed"
     # Unknown template is dropped, not retried
     assert mailer.handler({"Records": [{"messageId": "3", "body": json.dumps({"template": "nope", "data": {}})}]}, None)["batchItemFailures"] == []
+    # ---- delete customer
+    s, tc = call("POST /customers", {"name": "Temp", "email": "temp@example.com"}); assert s == 200
+    assert call("DELETE /customers/{id}", None, {"id": tc["id"]})[0] == 200
+    assert call("DELETE /customers/{id}", None, {"id": tc["id"]})[0] == 404
+    assert tc["id"] not in [x["id"] for x in call("GET /customers")[1]]
+    assert call("POST /invoices", {"customerId": tc["id"], "lines": lines})[0] == 404
     print("ALL OK")
 run()

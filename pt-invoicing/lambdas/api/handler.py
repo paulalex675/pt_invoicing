@@ -136,6 +136,15 @@ def update_customer(body, params):
     return {"id": cid, "name": name, "email": email, "address": address}
 
 
+def delete_customer(_body, params):
+    cid = params["id"]
+    if not TABLE.get_item(Key={"pk": "CUSTOMER", "sk": cid}).get("Item"):
+        raise ApiError(404, "Customer not found")
+    # Invoices keep their own copy of the customer's details, so they stay on record
+    TABLE.delete_item(Key={"pk": "CUSTOMER", "sk": cid})
+    return {"deleted": cid}
+
+
 # ---------- invoices ----------
 
 def next_invoice_number():
@@ -362,6 +371,7 @@ ROUTES = {
     "GET /customers": list_customers,
     "POST /customers": create_customer,
     "PUT /customers/{id}": update_customer,
+    "DELETE /customers/{id}": delete_customer,
     "GET /invoices": list_invoices,
     "POST /invoices": create_invoice,
     "POST /invoices/{number}/resend": resend_invoice,

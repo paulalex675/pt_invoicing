@@ -162,6 +162,7 @@ function customerForm() {
         <button class="secondary" data-action="cancel-customer">Cancel</button>
         <button class="primary" data-action="save-customer">${f.mode === 'edit' ? 'Save changes' : 'Add customer'}</button>
       </div>
+      ${f.mode === 'edit' ? '<button class="link" style="color:var(--danger);margin-top:10px" data-action="delete-customer">Delete this customer</button>' : ''}
     </div>`;
 }
 
@@ -267,6 +268,25 @@ async function saveCustomer() {
   } catch (e) { if (e.message !== 'Signed out') toast(e.message, true); }
 }
 
+async function deleteCustomer() {
+  const f = state.custForm;
+  if (!f || f.mode !== 'edit') return;
+  const count = state.invoices.filter((i) => i.customer.id === f.id).length;
+  const warn = count
+    ? `\n\nThey have ${count} invoice${count === 1 ? '' : 's'}. Those stay on record, but you'll need to pick another customer to edit them.`
+    : '';
+  if (!confirm(`Delete ${f.name}? This can't be undone.${warn}`)) return;
+  try {
+    await api('DELETE', `/customers/${f.id}`);
+    state.customers = state.customers.filter((c) => c.id !== f.id);
+    if (state.draft.customerId === f.id) state.draft.customerId = '';
+    state.custForm = null;
+    saveDraft();
+    render();
+    toast(`${f.name} deleted`);
+  } catch (e) { if (e.message !== 'Signed out') toast(e.message, true); }
+}
+
 function validateDraft() {
   const d = state.draft;
   if (!d.customerId) return 'Choose a customer first.';
@@ -320,6 +340,10 @@ function startEdit(number) {
   };
   state.custForm = null;
   state.tab = 'new';
+  if (!state.customers.some((c) => c.id === inv.customer.id)) {
+    state.draft.customerId = '';
+    toast('That customer has been deleted. Pick a customer before saving.', true);
+  }
   render();
   window.scrollTo(0, 0);
 }
@@ -409,6 +433,7 @@ document.addEventListener('click', (e) => {
   }
   else if (a === 'cancel-customer') { state.custForm = null; render(); }
   else if (a === 'save-customer') saveCustomer();
+  else if (a === 'delete-customer') deleteCustomer();
   else if (a === 'send') sendInvoice();
   else if (a === 'edit') startEdit(el.dataset.n);
   else if (a === 'cancel-edit') { leaveEdit(); render(); }

@@ -227,7 +227,7 @@ class InvoicingStack(Stack):
         M = apigw.HttpMethod
         for path, methods in {
             "/customers": [M.GET, M.POST],
-            "/customers/{id}": [M.PUT],
+            "/customers/{id}": [M.PUT, M.DELETE],
             "/invoices": [M.GET, M.POST],
             "/invoices/{number}": [M.PUT, M.DELETE],
             "/invoices/{number}/resend": [M.POST],
