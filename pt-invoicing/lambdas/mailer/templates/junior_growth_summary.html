@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ d.child_first_name }}'s growth update{% endblock %}
+{% block content %}
+<p style="margin:0 0 16px;font-size:22px;font-weight:700;color:{{ brand.primary }};">{{ d.child_first_name }}'s growth update</p>
+
+<p style="margin:0 0 16px;">Hi {{ d.guardian_name.split(' ')[0] }}, here are {{ d.child_first_name }}'s latest measurements.</p>
+
+{% if d.note %}<p style="margin:0 0 16px;">{{ d.note }}</p>{% endif %}
+
+{% if d.stage_text %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;background:#f3f4f6;border-radius:6px;font-size:14px;">
+  <tr><td style="padding:14px 18px;">
+    <div style="font-weight:700;margin-bottom:4px;">{{ d.stage_text }}</div>
+    <div style="color:#4b5563;">{{ stage_notes[d.stage] }}</div>
+    {% if d.rapid_growth %}<div style="margin-top:8px;color:#4b5563;">{{ d.child_first_name }} is growing quickly at the moment, so I'm keeping an eye on training load and recovery.</div>{% endif %}
+  </td></tr>
+</table>
+{% endif %}
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px;">
+  <tr>
+    <td style="padding:8px 8px 8px 0;border-bottom:2px solid {{ brand.primary }};font-weight:700;color:#6b7280;">Date</td>
+    <td align="right" style="padding:8px;border-bottom:2px solid {{ brand.primary }};font-weight:700;color:#6b7280;">Height</td>
+    <td align="right" style="padding:8px;border-bottom:2px solid {{ brand.primary }};font-weight:700;color:#6b7280;">Weight</td>
+    <td align="right" style="padding:8px 0 8px 8px;border-bottom:2px solid {{ brand.primary }};font-weight:700;color:#6b7280;">Growth / month</td>
+  </tr>
+  {% for m in d.measurements | reverse %}
+  <tr>
+    <td style="padding:9px 8px 9px 0;border-bottom:1px solid #e5e7eb;white-space:nowrap;">{{ m.measured_on | nice_date }}</td>
+    <td align="right" style="padding:9px 8px;border-bottom:1px solid #e5e7eb;white-space:nowrap;">{{ m.height_cm | cm }}</td>
+    <td align="right" style="padding:9px 8px;border-bottom:1px solid #e5e7eb;white-space:nowrap;">{% if m.weight_kg %}{{ '%.1f' % m.weight_kg }} kg{% else %}-{% endif %}</td>
+    <td align="right" style="padding:9px 0 9px 8px;border-bottom:1px solid #e5e7eb;white-space:nowrap;">{% if m.growth_cm_per_month is not none %}{{ '%.1f' % m.growth_cm_per_month }} cm{% else %}-{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<p style="margin:20px 0 0;color:#6b7280;font-size:13px;">Growth stage is an estimate from height, age and measurement history, used to plan training safely. It isn't a medical assessment.</p>
+<p style="margin:16px 0 0;">Any questions, just reply to this email.</p>
+{% endblock %}

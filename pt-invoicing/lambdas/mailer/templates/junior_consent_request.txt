@@ -1,0 +1,17 @@
+{{ biz.name }}
+Consent for {{ d.child_first_name }}'s training
+
+Hi {{ d.guardian_name.split(' ')[0] }},
+
+Before I start training {{ d.child_first_name }}, I need your consent as their parent or guardian. It takes a couple of minutes and you choose exactly what you're happy with:
+
+{% for c in d.consent_types %}- {{ labels[c] }}
+{% endfor %}
+Review and give consent:
+{{ d.link }}
+
+This link is just for you, works once, and expires on {{ d.expires_on | nice_date }}. You can withdraw any part of your consent at any time by replying to this email.
+
+Any questions, just reply.
+
+{{ biz.name }}

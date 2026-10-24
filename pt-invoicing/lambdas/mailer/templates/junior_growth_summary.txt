@@ -1,0 +1,18 @@
+{{ biz.name }}
+{{ d.child_first_name }}'s growth update
+
+Hi {{ d.guardian_name.split(' ')[0] }}, here are {{ d.child_first_name }}'s latest measurements.
+{% if d.note %}
+{{ d.note }}
+{% endif %}{% if d.stage_text %}
+{{ d.stage_text }}: {{ stage_notes[d.stage] }}
+{% if d.rapid_growth %}{{ d.child_first_name }} is growing quickly at the moment, so I'm keeping an eye on training load and recovery.
+{% endif %}{% endif %}
+{% for m in d.measurements | reverse -%}
+{{ m.measured_on | nice_date }}  height {{ m.height_cm | cm }}{% if m.weight_kg %}  weight {{ '%.1f' % m.weight_kg }} kg{% endif %}{% if m.growth_cm_per_month is not none %}  growth {{ '%.1f' % m.growth_cm_per_month }} cm/month{% endif %}
+{% endfor %}
+Growth stage is an estimate from height, age and measurement history, used to plan training safely. It isn't a medical assessment.
+
+Any questions, just reply to this email.
+
+{{ biz.name }}

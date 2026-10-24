@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Consent for {{ d.child_first_name }}'s training{% endblock %}
+{% block content %}
+<p style="margin:0 0 16px;font-size:22px;font-weight:700;color:{{ brand.primary }};">Consent for {{ d.child_first_name }}'s training</p>
+
+<p style="margin:0 0 16px;">Hi {{ d.guardian_name.split(' ')[0] }},</p>
+
+<p style="margin:0 0 16px;">Before I start training {{ d.child_first_name }}, I need your consent as their parent or guardian. It takes a couple of minutes and you choose exactly what you're happy with:</p>
+
+<ul style="margin:0 0 20px;padding-left:20px;">
+  {% for c in d.consent_types %}<li style="margin:0 0 6px;">{{ labels[c] }}</li>{% endfor %}
+</ul>
+
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr>
+  <td style="background:{{ brand.primary }};border-radius:6px;">
+    <a href="{{ d.link }}" style="display:inline-block;padding:12px 22px;color:#ffffff;font-weight:700;text-decoration:none;">Review and give consent</a>
+  </td>
+</tr></table>
+
+<p style="margin:0 0 16px;color:#6b7280;font-size:13px;">This link is just for you, works once, and expires on {{ d.expires_on | nice_date }}. You can withdraw any part of your consent at any time by replying to this email.</p>
+
+<p style="margin:0;">Any questions, just reply.</p>
+{% endblock %}
