@@ -251,6 +251,8 @@ class InvoicingStack(Stack):
                     "brand": brand,
                     "businessName": biz["name"],
                     "paymentTermsDays": int(biz.get("payment_terms_days", 7)),
+                    # Trainees tab + consent.html (juniors API lives in the pt_app repo)
+                    "juniorsApiUrl": config.get("juniors_api_url", ""),
                 }),
             ],
             destination_bucket=site_bucket,

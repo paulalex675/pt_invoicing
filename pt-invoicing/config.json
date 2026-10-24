@@ -5,7 +5,11 @@
     "owner_email": "alexrobinson.paul@outlook.com",
     "from_address": "invoices@paulpt.co.uk",
     "reply_to": "alexrobinson.paul@outlook.com",
-    "address_lines": ["10 Crowborough Path", "Watford", "WD19 6EH"],
+    "address_lines": [
+      "10 Crowborough Path",
+      "Watford",
+      "WD19 6EH"
+    ],
     "phone": "07568962707",
     "website": "http://www.paulpt.co.uk",
     "invoice_prefix": "INV-",
@@ -27,5 +31,6 @@
   "domain": {
     "name": "",
     "certificate_arn": ""
-  }
+  },
+  "juniors_api_url": "https://ywi6lvtnef.execute-api.eu-west-2.amazonaws.com"
 }

@@ -125,10 +125,10 @@ function signOut() {
   location.assign(`https://${cfg.cognitoDomain}/logout?${q}`);
 }
 
-async function api(method, path, body) {
+async function api(method, path, body, base = cfg.apiUrl) {
   const token = await getToken();
   if (!token) { showLogin('Your session has ended. Please sign in again.'); throw new Error('Signed out'); }
-  const r = await fetch(cfg.apiUrl.replace(/\/$/, '') + path, {
+  const r = await fetch(base.replace(/\/$/, '') + path, {
     method,
     headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
     body: body ? JSON.stringify(body) : undefined,
@@ -244,7 +244,9 @@ function render() {
   document.querySelectorAll('#tabs button').forEach((b) => {
     if (b.dataset.tab === state.tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
-  appEl.innerHTML = state.tab === 'new' ? renderNew() : renderInvoices();
+  appEl.innerHTML = state.tab === 'new' ? renderNew()
+    : state.tab === 'trainees' ? Juniors.render()
+    : renderInvoices();
 }
 
 /* ---------- actions ---------- */
@@ -418,8 +420,13 @@ async function invoiceAction(action, number) {
 /* ---------- events (delegated, so re-rendering never loses handlers) ---------- */
 document.addEventListener('click', (e) => {
   const tab = e.target.closest('[data-tab]');
-  if (tab) { state.tab = tab.dataset.tab; render(); return; }
+  if (tab) {
+    state.tab = tab.dataset.tab; render();
+    if (state.tab === 'trainees') Juniors.enter();
+    return;
+  }
   if (e.target.id === 'signOut') return signOut();
+  if (Juniors.onClick(e)) return;
   const el = e.target.closest('[data-action]');
   if (!el) return;
   const a = el.dataset.action;
@@ -442,6 +449,7 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('input', (e) => {
+  if (Juniors.onInput(e)) return;
   const t = e.target;
   if (t.dataset.cust) state.custForm[t.dataset.cust] = t.value;
   else if (t.dataset.line !== undefined) {

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14213d">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .consent-type { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .consent-type:last-child { border-bottom: 0; }
+  .consent-type input[type=checkbox], .declare input[type=checkbox] {
+    -webkit-appearance: auto; appearance: auto; width: 22px; height: 22px; min-height: 0; flex: none; margin-top: 2px; accent-color: var(--brand);
+  }
+  .consent-type strong { display: block; margin-bottom: 2px; }
+  .consent-type span { color: var(--muted); font-size: .9rem; }
+  .declare { display: flex; gap: 12px; align-items: flex-start; }
+  .lede { margin: 0 0 14px; }
+  .small { color: var(--muted); font-size: .85rem; }
+  .info p { margin: 0 0 10px; font-size: .92rem; }
+  .info p:last-child { margin-bottom: 0; }
+  .done { text-align: center; margin-top: 50px; }
+  .done h2 { font-size: 1.3rem; }
+  main { padding-bottom: 40px; }
+</style>
+<title>Training consent</title>
+</head>
+<body>
+<header class="top"><h1 id="bizName">Training consent</h1></header>
+<main id="page" aria-live="polite"><p class="msg">Loading…</p></main>
+<div id="toast" class="toast" role="status" hidden></div>
+<script src="consent.js"></script>
+</body>
+</html>
