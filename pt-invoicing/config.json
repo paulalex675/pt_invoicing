@@ -2,9 +2,9 @@
   "region": "eu-west-2",
   "business": {
     "name": "Paul Robinson",
-    "owner_email": "alexrobinson.paul@outlook.com",
-    "from_address": "invoices@paulpt.co.uk",
-    "reply_to": "alexrobinson.paul@outlook.com",
+    "owner_email": "paulpt.coaching@gmail.com",
+    "from_address": "paulr@paulpt.co.uk",
+    "reply_to": "paulpt.coaching@gmail.com",
     "address_lines": [
       "10 Crowborough Path",
       "Watford",
@@ -26,7 +26,7 @@
     "app_name": "PT Invoices",
     "primary": "#14213d",
     "accent": "#c8553d",
-    "logo_url": ""
+    "logo_url": "https://www.paulpt.co.uk/assets/logo/paulpt-email.png"
   },
   "domain": {
     "name": "",
