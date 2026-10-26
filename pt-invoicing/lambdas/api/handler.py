@@ -29,7 +29,7 @@ BUS = os.environ["BUS"]
 FILES_BUCKET = os.environ["FILES_BUCKET"]
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-LINE_TYPES = {"PT session", "Coaching session", "Small group", "Online coaching", "Other"}
+LINE_TYPES = {'PT session', 'MMA-Kids', 'MMA-Adults', 'Muay Thai-Kids', 'Muay Thai-Adults', 'Kickboxing-Kids', 'Kickboxing-Adults', 'Coaching session', 'Small group', 'Online coaching', 'Other'}
 MAX_LINES = 50
 
 

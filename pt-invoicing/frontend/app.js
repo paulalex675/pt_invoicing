@@ -1,7 +1,7 @@
 /* PT Invoices - single-file front end. No build step, no dependencies. */
 'use strict';
 
-const TYPES = ['PT session', 'Coaching session', 'Small group', 'Online coaching', 'Other'];
+const TYPES = ['PT session', 'MMA-Kids', 'MMA-Adults', 'Muay Thai-Kids', 'Muay Thai-Adults', 'Kickboxing-Kids', 'Kickboxing-Adults', 'Coaching session', 'Small group', 'Online coaching', 'Other'];
 const $ = (s) => document.querySelector(s);
 const appEl = $('#app');
 
